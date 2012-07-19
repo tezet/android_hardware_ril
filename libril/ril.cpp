@@ -2217,7 +2217,7 @@ static int responseSimStatus(Parcel &p, void *response, size_t responselen) {
         RIL_CardStatus_v5 *p_cur = ((RIL_CardStatus_v5 *) response);
 
         if (p_cur->card_state == RIL_CARDSTATE_ABSENT) {
-            LOGE("responseSimStatus: card absent\n");
+            ALOGE("responseSimStatus: card absent\n");
             // to prevent repeated exceptions in Ril.java,
             // return invalid response if card is absent
             // TODO: should be probably fixed in Ril.java in the future
