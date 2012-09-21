@@ -2233,7 +2233,7 @@ static int responseSimStatus(Parcel &p, void *response, size_t responselen) {
         return RIL_ERRNO_INVALID_RESPONSE;
     }
 
-    if (responselen == sizeof (RIL_CardStatus_v6)) {
+    if (responselen == sizeof (RIL_CardStatus_v6) || RIL_VERSION >= 4 ) {
         RIL_CardStatus_v6 *p_cur = ((RIL_CardStatus_v6 *) response);
 
         p.writeInt32(p_cur->card_state);
@@ -2243,16 +2243,24 @@ static int responseSimStatus(Parcel &p, void *response, size_t responselen) {
         p.writeInt32(p_cur->ims_subscription_app_index);
 
         sendSimStatusAppInfo(p, p_cur->num_applications, p_cur->applications);
-    } else if (responselen == sizeof (RIL_CardStatus_v5)) {
+    } else if (responselen == sizeof (RIL_CardStatus_v5) || RIL_VERSION < 4) {
         RIL_CardStatus_v5 *p_cur = ((RIL_CardStatus_v5 *) response);
 
-        p.writeInt32(p_cur->card_state);
-        p.writeInt32(p_cur->universal_pin_state);
-        p.writeInt32(p_cur->gsm_umts_subscription_app_index);
-        p.writeInt32(p_cur->cdma_subscription_app_index);
-        p.writeInt32(-1);
+        if (p_cur->card_state == RIL_CARDSTATE_ABSENT) {
+            ALOGE("responseSimStatus: card absent\n");
+            // to prevent repeated exceptions in Ril.java,
+            // return invalid response if card is absent
+            // TODO: should be probably fixed in Ril.java in the future
+            return RIL_ERRNO_INVALID_RESPONSE;
+        } else {
+            p.writeInt32(p_cur->card_state);
+            p.writeInt32(p_cur->universal_pin_state);
+            p.writeInt32(p_cur->gsm_umts_subscription_app_index);
+            p.writeInt32(p_cur->cdma_subscription_app_index);
+            p.writeInt32(-1);
 
-        sendSimStatusAppInfo(p, p_cur->num_applications, p_cur->applications);
+            sendSimStatusAppInfo(p, p_cur->num_applications, p_cur->applications);
+        }
     } else {
         ALOGE("responseSimStatus: A RilCardStatus_v6 or _v5 expected\n");
         return RIL_ERRNO_INVALID_RESPONSE;
